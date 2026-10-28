@@ -1,15 +1,30 @@
 "use client";
 
-import { motion } from "motion/react";
-import { 
-  LayoutDashboard, 
-  ArrowUpDown, 
-  FileText, 
-  Upload, 
-  AlertTriangle, 
-  Users, 
-  FileBarChart, 
-  Bell, 
+import { useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import Link from "next/link";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend
+} from "recharts";
+import {
+  LayoutDashboard,
+  ArrowUpDown,
+  FileText,
+  Upload,
+  AlertTriangle,
+  Users,
+  FileBarChart,
+  Bell,
   Settings,
   Search,
   Filter,
@@ -23,23 +38,9 @@ import {
   Eye,
   CheckCircle,
   Clock,
-  XCircle
+  XCircle,
+  X
 } from "lucide-react";
-import Link from "next/link";
-import { 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Legend
-} from "recharts";
-import type { ReactNode } from "react";
 
 // Development fixtures - These will be replaced with real API data when backend is implemented
 const financialSummary = {
@@ -70,8 +71,7 @@ const paymentSourceData = [
 const attentionItems = [
   { type: "unmatched", count: 12, label: "Unmatched Transactions", route: "/dashboard/transactions" },
   { type: "duplicate", count: 3, label: "Possible Duplicates", route: "/dashboard/transactions" },
-  { type: "overdue", count: 8, label: "Overdue Invoices", route: "/dashboard/invoices" },
-  { type: "imports", count: 2, label: "Imports Needing Attention", route: "/dashboard/imports" },
+  { type: "overdue", count: 2, label: "Overdue Invoices", route: "/dashboard/invoices" },
 ];
 
 const recentTransactions = [
@@ -81,7 +81,19 @@ const recentTransactions = [
   { id: "TXN-847301", date: "2026-10-25", counterparty: "Telebirr C2B", source: "Telebirr", amount: 32500, status: "matched" },
   { id: "TXN-847302", date: "2026-10-24", counterparty: "CBE Birr", source: "CBE Birr", amount: 45000, status: "unmatched" },
   { id: "TXN-847303", date: "2026-10-24", counterparty: "Cash Payment", source: "Cash", amount: 25000, status: "matched" },
+  { id: "TXN-847304", date: "2026-10-23", counterparty: "Dashen Bank", source: "Dashen", amount: 85000, status: "matched" },
+  { id: "TXN-847305", date: "2026-10-23", counterparty: "CBE Transfer", source: "CBE", amount: 95000, status: "needs_review" },
+  { id: "TXN-847306", date: "2026-10-22", counterparty: "Telebirr C2B", source: "Telebirr", amount: 42000, status: "matched" },
+  { id: "TXN-847307", date: "2026-10-22", counterparty: "Awash Transfer", source: "Awash", amount: 38000, status: "unmatched" },
+  { id: "TXN-847308", date: "2026-10-21", counterparty: "CBE Birr", source: "CBE Birr", amount: 52000, status: "matched" },
+  { id: "TXN-847309", date: "2026-10-21", counterparty: "Cash Payment", source: "Cash", amount: 18000, status: "matched" },
+  { id: "TXN-847310", date: "2026-10-20", counterparty: "Telebirr C2B", source: "Telebirr", amount: 29000, status: "needs_review" },
+  { id: "TXN-847311", date: "2026-10-20", counterparty: "CBE RTGS", source: "CBE", amount: 150000, status: "matched" },
+  { id: "TXN-847312", date: "2026-10-19", counterparty: "Dashen Bank", source: "Dashen", amount: 78000, status: "unmatched" },
 ];
+
+// Get unique sources for filter dropdown
+const uniqueSources = Array.from(new Set(recentTransactions.map(t => t.source)));
 
 const sidebarItems = [
   { icon: LayoutDashboard, label: "Overview", route: "/dashboard", active: true },
@@ -97,6 +109,39 @@ const sidebarItems = [
 ];
 
 export default function Dashboard() {
+  const [reportingPeriod, setReportingPeriod] = useState("This Month");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isRecordPaymentOpen, setIsRecordPaymentOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sourceFilter, setSourceFilter] = useState("all");
+  const itemsPerPage = 5;
+
+  // Reset page when search or filters change
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    setCurrentPage(1);
+  };
+
+  const handleStatusFilterChange = (value: string) => {
+    setStatusFilter(value);
+    setCurrentPage(1);
+  };
+
+  const handleSourceFilterChange = (value: string) => {
+    setSourceFilter(value);
+    setCurrentPage(1);
+  };
+
+  const clearFilters = () => {
+    setStatusFilter("all");
+    setSourceFilter("all");
+    setCurrentPage(1);
+  };
+
+  const hasActiveFilters = statusFilter !== "all" || sourceFilter !== "all";
+
   const formatETB = (amount: number) => {
     return new Intl.NumberFormat("en-ET", {
       style: "currency",
@@ -133,6 +178,31 @@ export default function Dashboard() {
         return status;
     }
   };
+
+  // Filter recent transactions based on search and filters
+  const filteredTransactions = recentTransactions.filter(t => {
+    // Search filter
+    const matchesSearch = searchQuery === "" ||
+      t.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t.counterparty.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t.source.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t.amount.toString().includes(searchQuery);
+
+    // Status filter
+    const matchesStatus = statusFilter === "all" || t.status === statusFilter;
+
+    // Source filter
+    const matchesSource = sourceFilter === "all" || t.source === sourceFilter;
+
+    return matchesSearch && matchesStatus && matchesSource;
+  });
+
+  // Pagination
+  const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
+  const paginatedTransactions = filteredTransactions.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   return (
     <div className="min-h-screen bg-background font-sans flex">
@@ -206,7 +276,11 @@ export default function Dashboard() {
             {/* Right Actions */}
             <div className="flex items-center gap-4">
               {/* Period Selector */}
-              <select className="px-3 py-2 bg-secondary border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
+              <select
+                value={reportingPeriod}
+                onChange={(e) => setReportingPeriod(e.target.value)}
+                className="px-3 py-2 bg-secondary border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              >
                 <option>This Month</option>
                 <option>Last Month</option>
                 <option>Last 3 Months</option>
@@ -217,20 +291,20 @@ export default function Dashboard() {
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
+                onClick={() => setIsRecordPaymentOpen(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-secondary border border-border rounded-lg text-sm font-medium text-foreground hover:bg-secondary/80 transition-colors"
               >
                 <Plus className="w-4 h-4" />
                 Record Payment
               </motion.button>
 
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+              <Link
+                href="/dashboard/imports"
                 className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
               >
                 <Upload className="w-4 h-4" />
                 Import Statement
-              </motion.button>
+              </Link>
 
               {/* Notifications */}
               <button className="relative p-2 text-muted-foreground hover:text-foreground transition-colors">
@@ -417,7 +491,7 @@ export default function Dashboard() {
             className="bg-card border border-border rounded-xl p-6"
           >
             <h3 className="text-lg font-semibold text-foreground mb-4">Needs Your Attention</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-4">
               {attentionItems.map((item) => (
                 <Link
                   key={item.type}
@@ -450,12 +524,31 @@ export default function Dashboard() {
                     <input
                       type="text"
                       placeholder="Search transactions..."
-                      className="pl-10 pr-4 py-2 bg-secondary border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary w-64"
+                      value={searchQuery}
+                      onChange={(e) => handleSearchChange(e.target.value)}
+                      className="pl-10 pr-10 py-2 bg-secondary border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary w-64"
                     />
+                    {searchQuery && (
+                      <button
+                        onClick={() => handleSearchChange("")}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        aria-label="Clear search"
+                      >
+                        <XCircle className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
-                  <button className="flex items-center gap-2 px-3 py-2 bg-secondary border border-border rounded-lg text-sm text-foreground hover:bg-secondary/80 transition-colors">
+                  <button
+                    onClick={() => setIsFilterOpen(!isFilterOpen)}
+                    className={`flex items-center gap-2 px-3 py-2 border rounded-lg text-sm font-medium transition-colors ${
+                      hasActiveFilters
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-secondary border-border text-foreground hover:bg-secondary/80"
+                    }`}
+                  >
                     <Filter className="w-4 h-4" />
                     Filter
+                    {hasActiveFilters && <span className="w-2 h-2 bg-primary-foreground rounded-full" />}
                   </button>
                 </div>
               </div>
@@ -475,40 +568,139 @@ export default function Dashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {recentTransactions.map((transaction, index) => (
-                    <tr key={transaction.id} className="border-b border-border hover:bg-secondary/50 transition-colors">
-                      <td className="px-6 py-4 text-sm text-foreground">
-                        {new Date(transaction.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                      </td>
-                      <td className="px-6 py-4 text-sm font-medium text-foreground">{transaction.id}</td>
-                      <td className="px-6 py-4 text-sm text-foreground">{transaction.counterparty}</td>
-                      <td className="px-6 py-4 text-sm text-foreground">{transaction.source}</td>
-                      <td className="px-6 py-4 text-sm font-semibold text-foreground">{formatETB(transaction.amount)}</td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          {getStatusIcon(transaction.status)}
-                          <span className="text-sm text-foreground">{getStatusLabel(transaction.status)}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <button className="text-sm text-primary hover:text-primary/80 font-medium transition-colors">
-                          View
-                        </button>
+                  {paginatedTransactions.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="px-6 py-12 text-center text-muted-foreground">
+                        No transactions found
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    paginatedTransactions.map((transaction, index) => (
+                      <tr key={transaction.id} className="border-b border-border hover:bg-secondary/50 transition-colors">
+                        <td className="px-6 py-4 text-sm text-foreground">
+                          {new Date(transaction.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                        </td>
+                        <td className="px-6 py-4 text-sm font-medium text-foreground">{transaction.id}</td>
+                        <td className="px-6 py-4 text-sm text-foreground">{transaction.counterparty}</td>
+                        <td className="px-6 py-4 text-sm text-foreground">{transaction.source}</td>
+                        <td className="px-6 py-4 text-sm font-semibold text-foreground">{formatETB(transaction.amount)}</td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            {getStatusIcon(transaction.status)}
+                            <span className="text-sm text-foreground">{getStatusLabel(transaction.status)}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <Link
+                            href="/dashboard/transactions"
+                            className="text-sm text-primary hover:text-primary/80 font-medium transition-colors"
+                          >
+                            View
+                          </Link>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
 
+            {/* Filter Popover */}
+            <AnimatePresence>
+              {isFilterOpen && (
+                <>
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={() => setIsFilterOpen(false)}
+                    className="fixed inset-0 bg-black/50 z-50"
+                  />
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="fixed inset-0 z-50 flex items-start justify-center pt-32 p-4"
+                  >
+                    <div className="bg-card border border-border rounded-xl w-full max-w-md p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="text-sm font-semibold text-foreground">Filter Transactions</h4>
+                        <button
+                          onClick={() => setIsFilterOpen(false)}
+                          className="text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <div className="space-y-4 mb-6">
+                        <div>
+                          <label className="text-sm text-muted-foreground block mb-2">Status</label>
+                          <select
+                            value={statusFilter}
+                            onChange={(e) => handleStatusFilterChange(e.target.value)}
+                            className="w-full px-3 py-2 bg-secondary border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                          >
+                            <option value="all">All Statuses</option>
+                            <option value="matched">Matched</option>
+                            <option value="needs_review">Needs Review</option>
+                            <option value="unmatched">Unmatched</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-sm text-muted-foreground block mb-2">Payment Source</label>
+                          <select
+                            value={sourceFilter}
+                            onChange={(e) => handleSourceFilterChange(e.target.value)}
+                            className="w-full px-3 py-2 bg-secondary border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                          >
+                            <option value="all">All Sources</option>
+                            {uniqueSources.map((source) => (
+                              <option key={source} value={source}>{source}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={clearFilters}
+                          className="flex-1 px-4 py-2 bg-secondary border border-border rounded-lg text-sm text-foreground hover:bg-secondary/80 transition-colors"
+                        >
+                          Clear Filters
+                        </button>
+                        <button
+                          onClick={() => setIsFilterOpen(false)}
+                          className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm hover:bg-primary/90 transition-colors"
+                        >
+                          Apply
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+
             {/* Pagination */}
             <div className="px-6 py-4 border-t border-border flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">Showing 1-6 of 156 transactions</p>
+              <p className="text-sm text-muted-foreground">
+                Showing {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, filteredTransactions.length)} of {filteredTransactions.length} transactions
+              </p>
               <div className="flex items-center gap-2">
-                <button className="px-3 py-1.5 bg-secondary border border-border rounded-lg text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50" disabled>
+                <button
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 bg-secondary border border-border rounded-lg text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
                   Previous
                 </button>
-                <button className="px-3 py-1.5 bg-secondary border border-border rounded-lg text-sm text-foreground hover:bg-secondary/80 transition-colors">
+                <span className="text-sm text-foreground">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1.5 bg-secondary border border-border rounded-lg text-sm text-foreground hover:bg-secondary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
                   Next
                 </button>
               </div>
@@ -516,6 +708,75 @@ export default function Dashboard() {
           </motion.div>
         </div>
       </main>
+
+      {/* Record Payment Dialog */}
+      <AnimatePresence>
+        {isRecordPaymentOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsRecordPaymentOpen(false)}
+              className="fixed inset-0 bg-black/50 z-50"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            >
+              <div className="bg-card border border-border rounded-xl w-full max-w-md p-6">
+                <h3 className="text-lg font-semibold text-foreground mb-4">Record Payment</h3>
+                <div className="space-y-4 mb-6">
+                  <div>
+                    <label className="text-sm text-muted-foreground block mb-2">Amount (ETB)</label>
+                    <input
+                      type="number"
+                      placeholder="Enter amount"
+                      className="w-full px-3 py-2 bg-secondary border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm text-muted-foreground block mb-2">Payment Method</label>
+                    <select className="w-full px-3 py-2 bg-secondary border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
+                      <option value="">Select method...</option>
+                      <option value="cash">Cash</option>
+                      <option value="bank">Bank Transfer</option>
+                      <option value="mobile">Mobile Money</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-sm text-muted-foreground block mb-2">Reference (optional)</label>
+                    <input
+                      type="text"
+                      placeholder="Payment reference"
+                      className="w-full px-3 py-2 bg-secondary border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setIsRecordPaymentOpen(false)}
+                    className="flex-1 px-4 py-2 bg-secondary border border-border rounded-lg text-sm text-foreground hover:bg-secondary/80 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsRecordPaymentOpen(false);
+                      alert("Payment recorded (frontend prototype - backend endpoint required for persistence)");
+                    }}
+                    className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm hover:bg-primary/90 transition-colors"
+                  >
+                    Record
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -297,7 +297,8 @@ export default function ReconciliationPage() {
         t.counterparty.toLowerCase().includes(query) ||
         t.source.toLowerCase().includes(query) ||
         t.amount.toString().includes(query) ||
-        (t.narration && t.narration.toLowerCase().includes(query))
+        (t.narration && t.narration.toLowerCase().includes(query)) ||
+        (t.suggestedInvoices && t.suggestedInvoices.some(inv => inv.id.toLowerCase().includes(query)))
       );
     }
 
