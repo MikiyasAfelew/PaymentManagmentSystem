@@ -1,22 +1,11 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  LayoutDashboard,
-  ArrowUpDown,
-  FileText,
-  Upload,
-  AlertTriangle,
-  Users,
-  FileBarChart,
-  Bell,
-  Settings,
   Search,
   Filter,
   Plus,
-  ChevronDown,
-  Building2,
   CheckCircle,
   Clock,
   XCircle,
@@ -32,7 +21,8 @@ import {
   User,
   FileText as FileTextIcon
 } from "lucide-react";
-import Link from "next/link";
+import DashboardLayout from "@/components/DashboardLayout";
+import { DateRangePicker } from "@/components/DatePicker";
 
 // Development fixtures - These will be replaced with real API data when backend is implemented
 const reconciliationSummary = {
@@ -235,19 +225,6 @@ const transactions = [
   },
 ];
 
-const sidebarItems = [
-  { icon: LayoutDashboard, label: "Overview", route: "/dashboard" },
-  { icon: ArrowUpDown, label: "Transactions", route: "/dashboard/transactions" },
-  { icon: FileText, label: "Reconciliation", route: "/dashboard/reconciliation", active: true },
-  { icon: Upload, label: "Imports", route: "/dashboard/imports" },
-  { icon: AlertTriangle, label: "Discrepancies", route: "/dashboard/discrepancies" },
-  { icon: Users, label: "Customers", route: "/dashboard/customers" },
-  { icon: FileBarChart, label: "Invoices", route: "/dashboard/invoices" },
-  { icon: FileBarChart, label: "Reports", route: "/dashboard/reports" },
-  { icon: Bell, label: "Notifications", route: "/dashboard/notifications" },
-  { icon: Settings, label: "Settings", route: "/dashboard/settings" },
-];
-
 const filterOptions = [
   { label: "All", count: 1428, value: "all" },
   { label: "Needs Matching", count: 23, value: "needs_matching" },
@@ -273,6 +250,8 @@ export default function ReconciliationPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [dateRangeStart, setDateRangeStart] = useState("");
+  const [dateRangeEnd, setDateRangeEnd] = useState("");
   const itemsPerPage = 5;
 
   // Combined filtering logic using useMemo to avoid prerender issues
@@ -398,6 +377,26 @@ export default function ReconciliationPage() {
     }, 1000);
   };
 
+  // Handle Escape key to close dialogs
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        if (isConfirmDialogOpen) setIsConfirmDialogOpen(false);
+        if (isManualMatchDialogOpen) setIsManualMatchDialogOpen(false);
+        if (isRejectDialogOpen) setIsRejectDialogOpen(false);
+        if (isFlagDialogOpen) setIsFlagDialogOpen(false);
+      }
+    };
+
+    if (isConfirmDialogOpen || isManualMatchDialogOpen || isRejectDialogOpen || isFlagDialogOpen) {
+      document.addEventListener("keydown", handleEscape);
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isConfirmDialogOpen, isManualMatchDialogOpen, isRejectDialogOpen, isFlagDialogOpen]);
+
   // Pagination
   const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
   const paginatedTransactions = filteredTransactions.slice(
@@ -422,103 +421,33 @@ export default function ReconciliationPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background font-sans flex">
-      {/* Sidebar */}
-      <aside className="w-64 bg-card border-r border-border flex flex-col fixed h-full z-40 hidden lg:flex">
-        <div className="p-6 border-b border-border">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-lg">P</span>
-            </div>
-            <span className="text-xl font-semibold text-foreground">PayManager</span>
-          </Link>
-        </div>
-
-        <div className="p-4 border-b border-border">
-          <button className="w-full flex items-center justify-between px-3 py-2 bg-secondary rounded-lg hover:bg-secondary/80 transition-colors">
-            <div className="flex items-center gap-2">
-              <Building2 className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm font-medium text-foreground">Selam Retail PLC</span>
-            </div>
-            <ChevronDown className="w-4 h-4 text-muted-foreground" />
-          </button>
-        </div>
-
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-          {sidebarItems.map((item) => (
-            <Link
-              key={item.route}
-              href={item.route}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                item.active
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-secondary"
-              }`}
-            >
-              <item.icon className="w-5 h-5" />
-              <span className="text-sm font-medium">{item.label}</span>
-            </Link>
-          ))}
-        </nav>
-
-        <div className="p-4 border-t border-border">
-          <div className="flex items-center gap-3 px-3 py-2">
-            <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
-              <span className="text-primary font-semibold text-sm">DM</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">Dawit Mengistu</p>
-              <p className="text-xs text-muted-foreground truncate">Administrator</p>
-            </div>
-          </div>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className="flex-1 lg:ml-64">
-        {/* Top Navigation */}
-        <header className="bg-card border-b border-border sticky top-0 z-30">
-          <div className="px-6 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm">
-              <span className="text-muted-foreground">Dashboard</span>
-              <span className="text-muted-foreground">/</span>
-              <span className="text-foreground font-medium">Reconciliation</span>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Search transactions..."
-                  value={searchQuery}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  className="pl-10 pr-10 py-2 bg-secondary border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary w-64"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => handleSearchChange("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                    aria-label="Clear search"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-              <button className="relative p-2 text-muted-foreground hover:text-foreground transition-colors">
-                <Bell className="w-5 h-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-              </button>
-            </div>
-          </div>
-        </header>
-
-        {/* Reconciliation Content */}
-        <div className="p-6">
+    <DashboardLayout activeRoute="/dashboard/reconciliation">
+      <div className="p-6">
           {/* Page Header */}
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-foreground mb-2">Reconciliation</h1>
-            <p className="text-muted-foreground">Match payments to invoices and resolve discrepancies</p>
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground mb-2">Reconciliation</h1>
+              <p className="text-muted-foreground">Match payments to invoices and resolve discrepancies</p>
+            </div>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search transactions..."
+                value={searchQuery}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="pl-10 pr-10 py-2 bg-secondary border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary w-64"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => handleSearchChange("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label="Clear search"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Summary Cards */}
@@ -591,15 +520,14 @@ export default function ReconciliationPage() {
               </select>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Date Range:</span>
-              <select
-                value="this_month"
-                disabled
-                className="px-3 py-1.5 bg-secondary border border-border rounded-lg text-sm text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary opacity-50 cursor-not-allowed"
-                title="Date filtering disabled - summary cards use mock data"
-              >
-                <option value="this_month">This Month (Mock Data)</option>
-              </select>
+              <DateRangePicker
+                startDate={dateRangeStart}
+                endDate={dateRangeEnd}
+                onStartDateChange={setDateRangeStart}
+                onEndDateChange={setDateRangeEnd}
+                label="Date Range"
+                className="w-64"
+              />
             </div>
           </div>
 
@@ -875,7 +803,6 @@ export default function ReconciliationPage() {
             </div>
           </div>
         </div>
-      </main>
 
       {/* Confirm Match Dialog */}
       <AnimatePresence>
@@ -1177,6 +1104,6 @@ export default function ReconciliationPage() {
           </>
         )}
       </AnimatePresence>
-    </div>
+    </DashboardLayout>
   );
 }

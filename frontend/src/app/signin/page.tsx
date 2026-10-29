@@ -1,11 +1,19 @@
 "use client";
 
+import { useState } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { motion } from "motion/react";
+import { useAuth } from "@/components/AuthProvider";
+import { Suspense } from "react";
 
-export default function SignIn() {
+function SignInContent() {
+  const { signIn } = useAuth();
+  const searchParams = useSearchParams();
+  const redirectPath = searchParams.get("redirect") || undefined;
+  const [isLoading, setIsLoading] = useState(false);
   return (
     <div className="min-h-screen bg-background font-sans flex flex-col relative overflow-hidden">
       {/* Subtle Background Pattern */}
@@ -14,7 +22,7 @@ export default function SignIn() {
         <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-gradient-to-tr from-primary/10 to-transparent rounded-full blur-3xl" />
       </div>
 
-      <Header showAuthButtons={false} showHelpLink={true} />
+      <Header showAuthButtons={false} showHelpLink={true} showThemeSwitcher={true} />
 
       <div className="flex-1 flex">
         {/* Left Section - Dashboard Preview */}
@@ -222,7 +230,25 @@ export default function SignIn() {
               Enter your credentials to access your account
             </p>
 
-            <form className="space-y-6">
+            {/* Demo Mode Notice */}
+            <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+              <p className="text-sm text-yellow-600 dark:text-yellow-400">
+                <strong>Demo Mode:</strong> This is a frontend prototype. Click "Sign In" to access the demo dashboard. No real authentication or data persistence.
+              </p>
+            </div>
+
+            <form
+              className="space-y-6"
+              onSubmit={(e) => {
+                e.preventDefault();
+                setIsLoading(true);
+                // Simulate loading delay
+                setTimeout(() => {
+                  const email = "dawit.mengistu@selamstore.et";
+                  signIn(email, redirectPath);
+                }, 500);
+              }}
+            >
               <motion.div
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -283,9 +309,10 @@ export default function SignIn() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 type="submit"
-                className="w-full bg-gradient-to-r from-primary to-primary/90 text-primary-foreground py-3.5 rounded-xl hover:from-primary/95 hover:to-primary/85 transition-all shadow-lg hover:shadow-xl font-medium"
+                disabled={isLoading}
+                className="w-full bg-gradient-to-r from-primary to-primary/90 text-primary-foreground py-3.5 rounded-xl hover:from-primary/95 hover:to-primary/85 transition-all shadow-lg hover:shadow-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Sign In
+                {isLoading ? "Signing in..." : "Sign In"}
               </motion.button>
 
               <motion.p
@@ -341,5 +368,13 @@ export default function SignIn() {
 
       <Footer />
     </div>
+  );
+}
+
+export default function SignIn() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center">Loading...</div>}>
+      <SignInContent />
+    </Suspense>
   );
 }

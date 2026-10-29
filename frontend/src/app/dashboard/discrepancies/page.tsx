@@ -3,17 +3,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  LayoutDashboard,
-  ArrowUpDown,
-  FileText,
-  Upload,
-  AlertTriangle,
-  Users,
-  FileBarChart,
-  Bell,
-  Settings,
-  Building2,
-  ChevronDown,
   Search,
   Filter,
   X,
@@ -22,9 +11,11 @@ import {
   XCircle,
   Eye,
   DollarSign,
-  AlertCircle
+  AlertCircle,
+  AlertTriangle,
+  FileText
 } from "lucide-react";
-import Link from "next/link";
+import DashboardLayout from "@/components/DashboardLayout";
 
 // Development fixtures - These will be replaced with real API data when backend is implemented
 const discrepancies = [
@@ -76,19 +67,6 @@ const discrepancies = [
     status: "resolved",
     discoveredDate: "2026-02-25"
   },
-];
-
-const sidebarItems = [
-  { icon: LayoutDashboard, label: "Overview", route: "/dashboard" },
-  { icon: ArrowUpDown, label: "Transactions", route: "/dashboard/transactions" },
-  { icon: FileText, label: "Reconciliation", route: "/dashboard/reconciliation" },
-  { icon: Upload, label: "Imports", route: "/dashboard/imports" },
-  { icon: AlertTriangle, label: "Discrepancies", route: "/dashboard/discrepancies", active: true },
-  { icon: Users, label: "Customers", route: "/dashboard/customers" },
-  { icon: FileBarChart, label: "Invoices", route: "/dashboard/invoices" },
-  { icon: FileBarChart, label: "Reports", route: "/dashboard/reports" },
-  { icon: Bell, label: "Notifications", route: "/dashboard/notifications" },
-  { icon: Settings, label: "Settings", route: "/dashboard/settings" },
 ];
 
 const filterOptions = [
@@ -192,99 +170,34 @@ export default function DiscrepanciesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background font-sans flex">
-      {/* Sidebar */}
-      <aside className="w-64 bg-card border-r border-border flex flex-col fixed h-full z-40 hidden lg:flex">
-        <div className="p-6 border-b border-border">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-lg">P</span>
+    <DashboardLayout activeRoute="/dashboard/discrepancies">
+      <div className="p-6">
+          {/* Page Header */}
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground mb-2">Discrepancies</h1>
+              <p className="text-muted-foreground">Review and resolve payment discrepancies</p>
             </div>
-            <span className="text-xl font-semibold text-foreground">PayManager</span>
-          </Link>
-        </div>
-
-        <div className="p-4 border-b border-border">
-          <button className="w-full flex items-center justify-between px-3 py-2 bg-secondary rounded-lg hover:bg-secondary/80 transition-colors">
-            <div className="flex items-center gap-2">
-              <Building2 className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm font-medium text-foreground">Selam Retail PLC</span>
-            </div>
-            <ChevronDown className="w-4 h-4 text-muted-foreground" />
-          </button>
-        </div>
-
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-          {sidebarItems.map((item) => (
-            <Link
-              key={item.route}
-              href={item.route}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                item.active
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-secondary"
-              }`}
-            >
-              <item.icon className="w-5 h-5" />
-              <span className="text-sm font-medium">{item.label}</span>
-            </Link>
-          ))}
-        </nav>
-
-        <div className="p-4 border-t border-border">
-          <div className="flex items-center gap-3 px-3 py-2">
-            <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
-              <span className="text-primary font-semibold text-sm">DM</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">Dawit Mengistu</p>
-              <p className="text-xs text-muted-foreground truncate">Administrator</p>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search discrepancies..."
+                value={searchQuery}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="pl-10 pr-10 py-2 bg-secondary border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary w-64"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => handleSearchChange("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label="Clear search"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
           </div>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className="flex-1 lg:ml-64">
-        {/* Top Navigation */}
-        <header className="bg-card border-b border-border sticky top-0 z-30">
-          <div className="px-6 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm">
-              <span className="text-muted-foreground">Dashboard</span>
-              <span className="text-muted-foreground">/</span>
-              <span className="text-foreground font-medium">Discrepancies</span>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Search discrepancies..."
-                  value={searchQuery}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  className="pl-10 pr-10 py-2 bg-secondary border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary w-64"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => handleSearchChange("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                    aria-label="Clear search"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-              <button className="relative p-2 text-muted-foreground hover:text-foreground transition-colors">
-                <Bell className="w-5 h-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-              </button>
-            </div>
-          </div>
-        </header>
-
-        {/* Discrepancies Content */}
-        <div className="p-6">
           {/* Page Header */}
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-foreground mb-2">Discrepancies</h1>
@@ -417,7 +330,6 @@ export default function DiscrepanciesPage() {
             </div>
           </div>
         </div>
-      </main>
 
       {/* Discrepancy Details Drawer */}
       <AnimatePresence>
@@ -538,6 +450,6 @@ export default function DiscrepanciesPage() {
           </>
         )}
       </AnimatePresence>
-    </div>
+    </DashboardLayout>
   );
 }

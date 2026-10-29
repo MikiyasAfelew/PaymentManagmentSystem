@@ -2,121 +2,34 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import DashboardLayout from "@/components/DashboardLayout";
+import { useTheme } from "@/components/ThemeProvider";
 import {
-  LayoutDashboard,
-  ArrowUpDown,
-  FileText,
-  Upload,
-  AlertTriangle,
-  Users,
-  FileBarChart,
-  Bell,
-  Settings,
   Building2,
   ChevronDown,
   User,
   Shield,
   Monitor,
   Bell as BellIcon,
-  LogOut
+  LogOut,
+  Moon,
+  Sun,
+  Monitor as MonitorIcon
 } from "lucide-react";
 import Link from "next/link";
 
-const sidebarItems = [
-  { icon: LayoutDashboard, label: "Overview", route: "/dashboard" },
-  { icon: ArrowUpDown, label: "Transactions", route: "/dashboard/transactions" },
-  { icon: FileText, label: "Reconciliation", route: "/dashboard/reconciliation" },
-  { icon: Upload, label: "Imports", route: "/dashboard/imports" },
-  { icon: AlertTriangle, label: "Discrepancies", route: "/dashboard/discrepancies" },
-  { icon: Users, label: "Customers", route: "/dashboard/customers" },
-  { icon: FileBarChart, label: "Invoices", route: "/dashboard/invoices" },
-  { icon: FileBarChart, label: "Reports", route: "/dashboard/reports" },
-  { icon: Bell, label: "Notifications", route: "/dashboard/notifications" },
-  { icon: Settings, label: "Settings", route: "/dashboard/settings", active: true },
-];
-
 export default function SettingsPage() {
-  const [activeSection, setActiveSection] = useState("business");
+  const [activeSection, setActiveSection] = useState("appearance");
+  const { theme, setTheme } = useTheme();
 
   const handleSave = () => {
     alert("Settings saved (frontend prototype - backend endpoint required for persistence)");
   };
 
   return (
-    <div className="min-h-screen bg-background font-sans flex">
-      {/* Sidebar */}
-      <aside className="w-64 bg-card border-r border-border flex flex-col fixed h-full z-40 hidden lg:flex">
-        <div className="p-6 border-b border-border">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-lg">P</span>
-            </div>
-            <span className="text-xl font-semibold text-foreground">PayManager</span>
-          </Link>
-        </div>
-
-        <div className="p-4 border-b border-border">
-          <button className="w-full flex items-center justify-between px-3 py-2 bg-secondary rounded-lg hover:bg-secondary/80 transition-colors">
-            <div className="flex items-center gap-2">
-              <Building2 className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm font-medium text-foreground">Selam Retail PLC</span>
-            </div>
-            <ChevronDown className="w-4 h-4 text-muted-foreground" />
-          </button>
-        </div>
-
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-          {sidebarItems.map((item) => (
-            <Link
-              key={item.route}
-              href={item.route}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                item.active
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-secondary"
-              }`}
-            >
-              <item.icon className="w-5 h-5" />
-              <span className="text-sm font-medium">{item.label}</span>
-            </Link>
-          ))}
-        </nav>
-
-        <div className="p-4 border-t border-border">
-          <div className="flex items-center gap-3 px-3 py-2">
-            <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
-              <span className="text-primary font-semibold text-sm">DM</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">Dawit Mengistu</p>
-              <p className="text-xs text-muted-foreground truncate">Administrator</p>
-            </div>
-          </div>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className="flex-1 lg:ml-64">
-        {/* Top Navigation */}
-        <header className="bg-card border-b border-border sticky top-0 z-30">
-          <div className="px-6 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm">
-              <span className="text-muted-foreground">Dashboard</span>
-              <span className="text-muted-foreground">/</span>
-              <span className="text-foreground font-medium">Settings</span>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <button className="relative p-2 text-muted-foreground hover:text-foreground transition-colors">
-                <Bell className="w-5 h-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-              </button>
-            </div>
-          </div>
-        </header>
-
-        {/* Settings Content */}
-        <div className="p-6">
+    <DashboardLayout activeRoute="/dashboard/settings">
+      {/* Settings Content */}
+      <div className="p-6">
           {/* Page Header */}
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-foreground mb-2">Settings</h1>
@@ -150,15 +63,15 @@ export default function SettingsPage() {
                   User Profile
                 </button>
                 <button
-                  onClick={() => setActiveSection("display")}
+                  onClick={() => setActiveSection("appearance")}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                    activeSection === "display"
+                    activeSection === "appearance"
                       ? "bg-primary text-primary-foreground"
                       : "text-muted-foreground hover:text-foreground hover:bg-secondary"
                   }`}
                 >
                   <Monitor className="w-4 h-4" />
-                  Display Preferences
+                  Appearance
                 </button>
                 <button
                   onClick={() => setActiveSection("notifications")}
@@ -269,17 +182,46 @@ export default function SettingsPage() {
                   </div>
                 )}
 
-                {activeSection === "display" && (
+                {activeSection === "appearance" && (
                   <div className="space-y-6">
-                    <h2 className="text-lg font-semibold text-foreground">Display Preferences</h2>
+                    <h2 className="text-lg font-semibold text-foreground">Appearance</h2>
                     <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-foreground">Dark Mode</p>
-                          <p className="text-xs text-muted-foreground">Use dark theme across the application</p>
-                        </div>
-                        <div className="w-12 h-6 bg-primary rounded-full relative cursor-pointer">
-                          <div className="absolute right-1 top-1 w-4 h-4 bg-primary-foreground rounded-full" />
+                      <div>
+                        <label className="text-sm text-muted-foreground block mb-3">Theme</label>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => setTheme("dark")}
+                            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                              theme === "dark"
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-secondary text-foreground hover:bg-secondary/80"
+                            }`}
+                          >
+                            <Moon className="w-4 h-4" />
+                            Dark
+                          </button>
+                          <button
+                            onClick={() => setTheme("light")}
+                            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                              theme === "light"
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-secondary text-foreground hover:bg-secondary/80"
+                            }`}
+                          >
+                            <Sun className="w-4 h-4" />
+                            Light
+                          </button>
+                          <button
+                            onClick={() => setTheme("system")}
+                            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                              theme === "system"
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-secondary text-foreground hover:bg-secondary/80"
+                            }`}
+                          >
+                            <MonitorIcon className="w-4 h-4" />
+                            System
+                          </button>
                         </div>
                       </div>
                       <div className="flex items-center justify-between">
@@ -422,7 +364,6 @@ export default function SettingsPage() {
             </div>
           </div>
         </div>
-      </main>
-    </div>
+      </DashboardLayout>
   );
 }

@@ -1,11 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Link from "next/link";
 import { motion } from "motion/react";
+import { useAuth } from "@/components/AuthProvider";
 
 export default function SignUp() {
+  const { signIn } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
   return (
     <div className="min-h-screen bg-background font-sans flex flex-col relative overflow-hidden">
       {/* Subtle Background Pattern */}
@@ -14,7 +18,7 @@ export default function SignUp() {
         <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-gradient-to-tr from-primary/10 to-transparent rounded-full blur-3xl" />
       </div>
 
-      <Header showAuthButtons={false} />
+      <Header showAuthButtons={false} showThemeSwitcher={true} />
 
       <div className="flex-1 flex">
         {/* Left Section */}
@@ -186,7 +190,25 @@ export default function SignUp() {
               </h2>
             </div>
 
-            <form className="space-y-5">
+            {/* Demo Mode Notice */}
+            <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+              <p className="text-sm text-yellow-600 dark:text-yellow-400">
+                <strong>Demo Mode:</strong> This is a frontend prototype. Click "Create Account" to access the demo dashboard. No real account registration or data persistence.
+              </p>
+            </div>
+
+            <form
+              className="space-y-5"
+              onSubmit={(e) => {
+                e.preventDefault();
+                setIsLoading(true);
+                // Simulate loading delay
+                setTimeout(() => {
+                  const email = "dawit.mengistu@selamstore.et";
+                  signIn(email);
+                }, 500);
+              }}
+            >
               <motion.div
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -352,9 +374,10 @@ export default function SignUp() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 type="submit"
-                className="w-full bg-gradient-to-r from-primary to-primary/90 text-primary-foreground py-3.5 rounded-xl hover:from-primary/95 hover:to-primary/85 transition-all shadow-lg hover:shadow-xl font-medium"
+                disabled={isLoading}
+                className="w-full bg-gradient-to-r from-primary to-primary/90 text-primary-foreground py-3.5 rounded-xl hover:from-primary/95 hover:to-primary/85 transition-all shadow-lg hover:shadow-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Create Account & Continue
+                {isLoading ? "Creating account..." : "Create Account & Continue"}
               </motion.button>
 
               <motion.p

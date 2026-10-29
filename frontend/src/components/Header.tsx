@@ -1,14 +1,28 @@
+"use client";
+
 import Link from "next/link";
+import { useTheme } from "@/components/ThemeProvider";
+import { Moon, Sun } from "lucide-react";
 
 interface HeaderProps {
   showAuthButtons?: boolean;
   showHelpLink?: boolean;
+  showThemeSwitcher?: boolean;
 }
 
 export default function Header({
   showAuthButtons = true,
   showHelpLink = false,
+  showThemeSwitcher = false,
 }: HeaderProps) {
+  const { theme, setTheme, resolvedTheme } = useTheme();
+
+  const toggleTheme = () => {
+    // Toggle between dark and light directly for landing page
+    const newTheme = resolvedTheme === "dark" ? "light" : "dark";
+    setTheme(newTheme);
+  };
+
   return (
     <header className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -21,7 +35,21 @@ export default function Header({
           </span>
         </Link>
         {showAuthButtons ? (
-          <nav className="flex items-center gap-6">
+          <nav className="flex items-center gap-4">
+            {showThemeSwitcher && (
+              <button
+                onClick={toggleTheme}
+                className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                aria-label="Toggle theme"
+                title="Switch between dark and light theme"
+              >
+                {resolvedTheme === "dark" ? (
+                  <Sun className="w-5 h-5" />
+                ) : (
+                  <Moon className="w-5 h-5" />
+                )}
+              </button>
+            )}
             <Link
               href="/signin"
               className="text-muted-foreground hover:text-foreground font-medium transition-colors"
@@ -36,7 +64,7 @@ export default function Header({
             </Link>
           </nav>
         ) : (
-          <nav className="flex items-center gap-6">
+          <nav className="flex items-center gap-4">
             {showHelpLink && (
               <Link
                 href="#"
@@ -45,6 +73,20 @@ export default function Header({
                 Need help?
               </Link>
             )}
+            {showThemeSwitcher && (
+              <button
+                onClick={toggleTheme}
+                className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                aria-label="Toggle theme"
+                title="Switch between dark and light theme"
+              >
+                {resolvedTheme === "dark" ? (
+                  <Sun className="w-5 h-5" />
+                ) : (
+                  <Moon className="w-5 h-5" />
+                )}
+              </button>
+            )}
             <Link
               href="/signin"
               className="text-muted-foreground hover:text-foreground font-medium transition-colors"
@@ -52,7 +94,7 @@ export default function Header({
               Sign In
             </Link>
             <Link
-              href="#"
+              href="/dashboard"
               className="text-muted-foreground hover:text-foreground font-medium transition-colors"
             >
               Help
